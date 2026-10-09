@@ -1,4 +1,4 @@
-const { loginUser, registerUser } = require("../services/auth.service");
+const { loginUser, registerUser, requestPasswordReset, resetPassword } = require("../services/auth.service");
 
 async function register(req, res) {
   const { username, email, password } = req.body || {};
@@ -40,4 +40,26 @@ async function login(req, res) {
   return res.json(result);
 }
 
-module.exports = { login, register };
+async function forgotPassword(req, res) {
+  const { email } = req.body || {};
+  if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: "Enter a valid email address." });
+  }
+  await requestPasswordReset(email);
+  return res.json({ message: "If that email is registered, a reset link has been sent." });
+}
+
+async function resetPasswordHandler(req, res) {
+  const { token, password } = req.body || {};
+  if (typeof token !== "string" || !/^[a-f0-9]{64}$/.test(token)) {
+    return res.status(400).json({ error: "This reset link is invalid or has expired." });
+  }
+  if (typeof password !== "string" || password.length < 8) {
+    return res.status(400).json({ error: "Password must be at least 8 characters." });
+  }
+  const ok = await resetPassword(token, password);
+  if (!ok) return res.status(400).json({ error: "This reset link is invalid or has expired." });
+  return res.json({ message: "Password updated. You can now log in." });
+}
+
+module.exports = { login, register, forgotPassword, resetPassword: resetPasswordHandler };
