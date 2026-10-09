@@ -5,7 +5,8 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "node --watch src/server.js",
-    "start": "node src/server.js",
+    "start": "node src/db/setup.js && node src/server.js",
+    "server": "node src/server.js",
     "db:setup": "node src/db/setup.js",
     "db:seed": "node src/db/seed.js",
     "db:seed-pilot": "node src/db/seedPilot.js",

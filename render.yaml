@@ -1,6 +1,6 @@
 databases:
   - name: s2answer-db
-    plan: basic-256mb # use "free" for testing only; free databases expire after 30 days
+    plan: free # Change to basic-256mb for production with persistent storage
     databaseName: quizboard
     user: quizboard
 
@@ -22,16 +22,8 @@ services:
         generateValue: true
       - key: TRUST_PROXY
         value: "1"
-      # Frontend URL (comma-separated for several), e.g. https://s2answer-web.onrender.com
+      # Frontend URL (comma-separated if multiple, e.g. https://your-frontend.onrender.com)
       - key: FRONTEND_ORIGIN
-        sync: false
-      - key: SMTP_HOST
-        sync: false
+        value: "http://localhost:3000"
       - key: SMTP_PORT
         value: "587"
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASSWORD
-        sync: false
-      - key: MAIL_FROM
-        sync: false
