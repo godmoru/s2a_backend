@@ -2,7 +2,7 @@ require("dotenv").config();
 const http = require("node:http");
 const { Server } = require("socket.io");
 const createApp = require("./app");
-const { getAllowedOrigins } = createApp;
+const { isOriginAllowed } = createApp;
 const pool = require("./db/pool");
 const { registerMatchSocketHandlers } = require("./controllers/match.socket.controller");
 const { restoreTimers } = require("./services/match.service");
@@ -19,7 +19,18 @@ async function startServer() {
   }
 
   const server = http.createServer(createApp());
-  const io = new Server(server, { cors: { origin: getAllowedOrigins() } });
+  const io = new Server(server, {
+    cors: {
+      origin: (origin, callback) => {
+        if (isOriginAllowed(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error(`Not allowed by CORS: ${origin}`));
+        }
+      },
+      credentials: true,
+    },
+  });
   registerMatchSocketHandlers(io);
 
   await restoreTimers();

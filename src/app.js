@@ -6,11 +6,24 @@ const pool = require("./db/pool");
 const v1Routes = require("./routes/v1");
 const errorHandler = require("./middleware/errorHandler");
 
-function getAllowedOrigins() {
-  return (process.env.FRONTEND_ORIGIN || "http://localhost:3000")
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  const env = process.env.FRONTEND_ORIGIN || "";
+  if (env === "*" || env.split(",").map((s) => s.trim()).includes("*")) return true;
+
+  const origins = env
     .split(",")
-    .map((origin) => origin.trim())
+    .map((o) => o.trim().toLowerCase().replace(/\/$/, ""))
     .filter(Boolean);
+
+  const normalized = origin.toLowerCase().replace(/\/$/, "");
+  if (normalized.startsWith("http://localhost:") || normalized.startsWith("http://127.0.0.1:")) {
+    return true;
+  }
+  if (origins.includes(normalized)) return true;
+  if (/^https:\/\/s2answer(-[a-z0-9-]+)?\.vercel\.app$/.test(normalized)) return true;
+
+  return false;
 }
 
 function createApp() {
@@ -22,7 +35,18 @@ function createApp() {
 
   app.use(helmet());
   app.use(compression());
-  app.use(cors({ origin: getAllowedOrigins() }));
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        if (isOriginAllowed(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error(`Not allowed by CORS: ${origin}`));
+        }
+      },
+      credentials: true,
+    }),
+  );
   app.use(express.json({ limit: "2mb" }));
 
   app.get("/health", async (_req, res) => {
@@ -49,4 +73,4 @@ function createApp() {
 }
 
 module.exports = createApp;
-module.exports.getAllowedOrigins = getAllowedOrigins;
+module.exports.isOriginAllowed = isOriginAllowed;
